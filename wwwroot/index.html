@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conta Corrente - Sistema de Testes</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <h1><i class="fas fa-university"></i> Conta Corrente</h1>
+                <div class="user-info" id="userInfo" style="display: none;">
+                    <span id="userName"></span>
+                    <button id="logoutBtn" class="btn btn-outline">Sair</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main">
+            <div class="container">
+                <!-- Login Screen -->
+                <div id="loginScreen" class="screen">
+                    <div class="auth-container">
+                        <div class="auth-tabs">
+                            <button class="tab-btn active" data-tab="login">Login</button>
+                            <button class="tab-btn" data-tab="register">Criar Conta</button>
+                        </div>
+
+                        <!-- Login Form -->
+                        <div id="loginForm" class="auth-form active">
+                            <h2>Fazer Login</h2>
+                            <form id="loginFormElement">
+                                <div class="form-group">
+                                    <label for="loginNumero">Número da Conta</label>
+                                    <input type="number" id="loginNumero" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="loginSenha">Senha</label>
+                                    <input type="password" id="loginSenha" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-sign-in-alt"></i> Entrar
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Register Form -->
+                        <div id="registerForm" class="auth-form">
+                            <h2>Criar Nova Conta</h2>
+                            <form id="registerFormElement">
+                                <div class="form-group">
+                                    <label for="registerNumero">Número da Conta</label>
+                                    <input type="number" id="registerNumero" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="registerNome">Nome Completo</label>
+                                    <input type="text" id="registerNome" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="registerSenha">Senha</label>
+                                    <input type="password" id="registerSenha" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-user-plus"></i> Criar Conta
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Screen -->
+                <div id="dashboardScreen" class="screen" style="display: none;">
+                    <div class="dashboard-header">
+                        <h2>Dashboard</h2>
+                        <div class="account-status">
+                            <span id="accountStatus" class="status-badge"></span>
+                        </div>
+                    </div>
+
+                    <!-- Account Info -->
+                    <div class="account-info">
+                        <div class="info-card">
+                            <h3>Informações da Conta</h3>
+                            <p><strong>Número:</strong> <span id="accountNumber"></span></p>
+                            <p><strong>Nome:</strong> <span id="accountName"></span></p>
+                            <p><strong>Status:</strong> <span id="accountStatusText"></span></p>
+                        </div>
+                    </div>
+
+                    <!-- Balance Card -->
+                    <div class="balance-card">
+                        <h3>Saldo Atual</h3>
+                        <div class="balance-amount" id="balanceAmount">R$ 0,00</div>
+                        <button id="refreshBalance" class="btn btn-outline">
+                            <i class="fas fa-sync-alt"></i> Atualizar
+                        </button>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="quick-actions">
+                        <button id="creditBtn" class="action-btn credit">
+                            <i class="fas fa-plus"></i>
+                            <span>Crédito</span>
+                        </button>
+                        <button id="debitBtn" class="action-btn debit">
+                            <i class="fas fa-minus"></i>
+                            <span>Débito</span>
+                        </button>
+                        <button id="statementBtn" class="action-btn statement">
+                            <i class="fas fa-list"></i>
+                            <span>Extrato</span>
+                        </button>
+                        <button id="activateBtn" class="action-btn activate" style="display: none;">
+                            <i class="fas fa-check"></i>
+                            <span>Ativar Conta</span>
+                        </button>
+                    </div>
+
+                    <!-- Recent Transactions -->
+                    <div class="recent-transactions">
+                        <h3>Últimas Transações</h3>
+                        <div id="recentTransactions" class="transactions-list">
+                            <!-- Transactions will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transaction Modal -->
+                <div id="transactionModal" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3 id="modalTitle">Nova Transação</h3>
+                            <button class="close-btn" id="closeModal">&times;</button>
+                        </div>
+                        <form id="transactionForm">
+                            <div class="form-group">
+                                <label for="transactionDate">Data</label>
+                                <input type="date" id="transactionDate" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="transactionValue">Valor</label>
+                                <input type="number" id="transactionValue" step="0.01" min="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="transactionDescription">Descrição (opcional)</label>
+                                <input type="text" id="transactionDescription" placeholder="Ex: Depósito, Pagamento, etc.">
+                            </div>
+                            <div class="form-actions">
+                                <button type="button" class="btn btn-outline" id="cancelTransaction">Cancelar</button>
+                                <button type="submit" class="btn btn-primary" id="confirmTransaction">
+                                    <i class="fas fa-check"></i> Confirmar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Statement Modal -->
+                <div id="statementModal" class="modal">
+                    <div class="modal-content large">
+                        <div class="modal-header">
+                            <h3>Extrato da Conta</h3>
+                            <button class="close-btn" id="closeStatementModal">&times;</button>
+                        </div>
+                        <div class="statement-filters">
+                            <div class="form-group">
+                                <label for="statementStartDate">Data Início</label>
+                                <input type="date" id="statementStartDate">
+                            </div>
+                            <div class="form-group">
+                                <label for="statementEndDate">Data Fim</label>
+                                <input type="date" id="statementEndDate">
+                            </div>
+                            <button id="loadStatement" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Buscar
+                            </button>
+                        </div>
+                        <div id="statementContent" class="statement-content">
+                            <!-- Statement will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+            <div class="spinner"></div>
+            <p>Carregando...</p>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div id="toastContainer" class="toast-container"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+
+

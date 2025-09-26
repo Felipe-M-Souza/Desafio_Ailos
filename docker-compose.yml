@@ -1,0 +1,87 @@
+version: "3.9"
+
+services:
+  api:
+    build: 
+      context: .
+      dockerfile: src/ContaCorrente.Api/Dockerfile
+    container_name: conta-corrente-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ConnectionStrings__Sqlite=Data Source=/data/app.db
+      - Kafka__BootstrapServers=kafka:9092
+      - Redis__Enabled=false
+      - Jwt__Issuer=ContaCorrente
+      - Jwt__Audience=ContaCorrente
+      - Jwt__Key=super_secret_key_here_change
+    ports:
+      - "8080:8080"
+    depends_on:
+      - kafka
+    volumes:
+      - ./data:/data
+    networks:
+      - conta-corrente-network
+
+  transferencias-api:
+    build: 
+      context: .
+      dockerfile: src/ContaCorrente.Transferencias.Api/Dockerfile
+    container_name: transferencias-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ConnectionStrings__Sqlite=Data Source=/data/transferencias.db
+      - Kafka__BootstrapServers=kafka:9092
+      - Kafka__TopicTransferencias=transferencias.efetuadas
+      - Redis__Enabled=false
+      - Jwt__Issuer=ContaCorrente
+      - Jwt__Audience=ContaCorrente
+      - Jwt__Key=super_secret_key_here_change
+    ports:
+      - "8081:8080"
+    depends_on:
+      - kafka
+    volumes:
+      - ./data:/data
+    networks:
+      - conta-corrente-network
+
+  tarifas-api:
+    build: 
+      context: .
+      dockerfile: src/ContaCorrente.Tarifas.Api/Dockerfile
+    container_name: tarifas-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - ConnectionStrings__Sqlite=Data Source=/data/tarifas.db
+      - Kafka__BootstrapServers=kafka:9092
+      - Kafka__TopicTarifas=tarifas.cobradas
+      - Redis__Enabled=false
+      - Jwt__Issuer=ContaCorrente
+      - Jwt__Audience=ContaCorrente
+      - Jwt__Key=super_secret_key_here_change
+    ports:
+      - "8082:8080"
+    depends_on:
+      - kafka
+    volumes:
+      - ./data:/data
+    networks:
+      - conta-corrente-network
+
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - conta-corrente-network
+
+networks:
+  conta-corrente-network:
+    driver: bridge
+
+volumes:
+  data:
+

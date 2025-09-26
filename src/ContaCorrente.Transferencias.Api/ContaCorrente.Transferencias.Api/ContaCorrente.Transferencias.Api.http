@@ -1,0 +1,6 @@
+@ContaCorrente.Transferencias.Api_HostAddress = http://localhost:5150
+
+GET {{ContaCorrente.Transferencias.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
