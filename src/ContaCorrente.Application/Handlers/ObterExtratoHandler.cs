@@ -44,8 +44,9 @@ namespace ContaCorrente.Application.Handlers
                 {
                     throw new ArgumentException($"Data de início deve estar no formato DD/MM/YYYY. Recebido: '{request.DataInicio}'");
                 }
-                dataInicio = dataInicioConvertida;
-                Console.WriteLine($"✅ Data início convertida: {dataInicioConvertida:yyyy-MM-dd}");
+                // Garantir que a data seja tratada como local
+                dataInicio = DateTime.SpecifyKind(dataInicioConvertida, DateTimeKind.Local);
+                Console.WriteLine($"✅ Data início convertida: {dataInicio:yyyy-MM-dd}");
             }
 
             if (!string.IsNullOrEmpty(request.DataFim))
@@ -55,8 +56,9 @@ namespace ContaCorrente.Application.Handlers
                 {
                     throw new ArgumentException($"Data de fim deve estar no formato DD/MM/YYYY. Recebido: '{request.DataFim}'");
                 }
-                dataFim = dataFimConvertida;
-                Console.WriteLine($"✅ Data fim convertida: {dataFimConvertida:yyyy-MM-dd}");
+                // Garantir que a data seja tratada como local
+                dataFim = DateTime.SpecifyKind(dataFimConvertida, DateTimeKind.Local);
+                Console.WriteLine($"✅ Data fim convertida: {dataFim:yyyy-MM-dd}");
             }
 
             Console.WriteLine($"🔍 Filtros aplicados - Data início: {dataInicio?.ToString("yyyy-MM-dd") ?? "null"}, Data fim: {dataFim?.ToString("yyyy-MM-dd") ?? "null"}");

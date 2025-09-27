@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tarifas-deployment
+  namespace: bankmore
+  labels:
+    app: bankmore
+    component: tarifas
+spec:
+  replicas: 2  # Múltiplas réplicas conforme requisito
+  selector:
+    matchLabels:
+      app: bankmore
+      component: tarifas
+  template:
+    metadata:
+      labels:
+        app: bankmore
+        component: tarifas
+    spec:
+      containers:
+      - name: tarifas-api
+        image: bankmore/tarifas-api:latest
+        ports:
+        - containerPort: 5011
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ASPNETCORE_URLS
+          value: "http://+:5011"
+        - name: ConnectionStrings__DefaultConnection
+          valueFrom:
+            configMapKeyRef:
+              name: bankmore-config
+              key: TARIFAS__CONNECTION_STRING
+        - name: Kafka__BootstrapServers
+          valueFrom:
+            configMapKeyRef:
+              name: bankmore-config
+              key: TARIFAS__KAFKA__BOOTSTRAP_SERVERS
+        - name: TarifaService__ValorTarifaTransferencia
+          valueFrom:
+            configMapKeyRef:
+              name: bankmore-config
+              key: TARIFAS__TARIFAS__VALOR_TRANSFERENCIA
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5011
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5011
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/data
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: bankmore-data-pvc
+      restartPolicy: Always

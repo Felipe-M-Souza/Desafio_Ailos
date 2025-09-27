@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bankmore-config
+  namespace: bankmore
+  labels:
+    app: bankmore
+    component: config
+data:
+  # ContaCorrente API Configuration
+  CONTA_CORRENTE__CONNECTION_STRING: "Data Source=/app/data/contacorrente.db"
+  CONTA_CORRENTE__KAFKA__BOOTSTRAP_SERVERS: "kafka-service:9092"
+  CONTA_CORRENTE__KAFKA__TOPICS__MOVIMENTOS: "movimentos.efetuados"
+  CONTA_CORRENTE__KAFKA__TOPICS__TRANSFERENCIAS: "transferencias.efetuadas"
+  CONTA_CORRENTE__KAFKA__TOPICS__TARIFAS: "tarifas.cobradas"
+  CONTA_CORRENTE__REDIS__CONNECTION_STRING: "redis-service:6379"
+  CONTA_CORRENTE__REDIS__INSTANCE_NAME: "BankMore"
+  CONTA_CORRENTE__JWT__SECRET_KEY: "MinhaChaveSecretaSuperSeguraParaJWT123456789"
+  CONTA_CORRENTE__JWT__ISSUER: "BankMore"
+  CONTA_CORRENTE__JWT__AUDIENCE: "BankMoreUsers"
+  CONTA_CORRENTE__JWT__EXPIRATION_MINUTES: "60"
+
+  # Transferencias API Configuration
+  TRANSFERENCIAS__CONNECTION_STRING: "Data Source=/app/data/transferencias.db"
+  TRANSFERENCIAS__CONTA_CORRENTE_API__BASE_URL: "http://conta-corrente-service:5009"
+  TRANSFERENCIAS__KAFKA__BOOTSTRAP_SERVERS: "kafka-service:9092"
+  TRANSFERENCIAS__KAFKA__TOPICS__TRANSFERENCIAS: "transferencias.efetuadas"
+
+  # Tarifas API Configuration
+  TARIFAS__CONNECTION_STRING: "Data Source=/app/data/tarifas.db"
+  TARIFAS__KAFKA__BOOTSTRAP_SERVERS: "kafka-service:9092"
+  TARIFAS__KAFKA__TOPICS__TRANSFERENCIAS: "transferencias.efetuadas"
+  TARIFAS__KAFKA__TOPICS__TARIFAS: "tarifas.cobradas"
+  TARIFAS__TARIFAS__VALOR_TRANSFERENCIA: "2.50"
+
+  # Kafka Configuration
+  KAFKA__BOOTSTRAP_SERVERS: "kafka-service:9092"
+  KAFKA__ZOOKEEPER_CONNECT: "zookeeper-service:2181"
+
+  # Redis Configuration
+  REDIS__CONNECTION_STRING: "redis-service:6379"
+  REDIS__INSTANCE_NAME: "BankMore"
+
+  # Seq Logging Configuration
+  SEQ__SERVER_URL: "http://seq-service:5341"

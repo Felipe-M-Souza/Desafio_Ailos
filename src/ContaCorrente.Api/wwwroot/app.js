@@ -744,6 +744,14 @@ function formatDateForAPI(dateString) {
     
     console.log('📅 Partes da data:', { year, month, day });
     console.log('📅 Data formatada para API:', formatted);
+    
+    // Validar se a data é válida
+    const testDate = new Date(year, month - 1, day);
+    if (testDate.getFullYear() != year || testDate.getMonth() != month - 1 || testDate.getDate() != day) {
+        console.error('📅 Data inválida:', dateString);
+        return '';
+    }
+    
     return formatted;
 }
 

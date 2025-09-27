@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: conta-corrente-deployment
+  namespace: bankmore
+  labels:
+    app: bankmore
+    component: conta-corrente
+spec:
+  replicas: 3  # Múltiplas réplicas conforme requisito
+  selector:
+    matchLabels:
+      app: bankmore
+      component: conta-corrente
+  template:
+    metadata:
+      labels:
+        app: bankmore
+        component: conta-corrente
+    spec:
+      containers:
+      - name: conta-corrente-api
+        image: bankmore/conta-corrente-api:latest
+        ports:
+        - containerPort: 5009
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ASPNETCORE_URLS
+          value: "http://+:5009"
+        - name: ConnectionStrings__DefaultConnection
+          valueFrom:
+            configMapKeyRef:
+              name: bankmore-config
+              key: CONTA_CORRENTE__CONNECTION_STRING
+        - name: ConnectionStrings__Redis
+          valueFrom:
+            configMapKeyRef:
+              name: bankmore-config
+              key: CONTA_CORRENTE__REDIS__CONNECTION_STRING
+        - name: Kafka__BootstrapServers
+          valueFrom:
+            configMapKeyRef:
+              name: bankmore-config
+              key: CONTA_CORRENTE__KAFKA__BOOTSTRAP_SERVERS
+        - name: Redis__ConnectionString
+          valueFrom:
+            configMapKeyRef:
+              name: bankmore-config
+              key: CONTA_CORRENTE__REDIS__CONNECTION_STRING
+        - name: Redis__InstanceName
+          valueFrom:
+            configMapKeyRef:
+              name: bankmore-config
+              key: CONTA_CORRENTE__REDIS__INSTANCE_NAME
+        - name: Jwt__SecretKey
+          valueFrom:
+            secretKeyRef:
+              name: bankmore-secrets
+              key: jwt-secret
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5009
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5009
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/data
+        - name: logs-volume
+          mountPath: /app/logs
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: bankmore-data-pvc
+      - name: logs-volume
+        persistentVolumeClaim:
+          claimName: bankmore-logs-pvc
+      restartPolicy: Always

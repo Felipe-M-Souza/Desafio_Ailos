@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transferencias-deployment
+  namespace: bankmore
+  labels:
+    app: bankmore
+    component: transferencias
+spec:
+  replicas: 2  # Múltiplas réplicas conforme requisito
+  selector:
+    matchLabels:
+      app: bankmore
+      component: transferencias
+  template:
+    metadata:
+      labels:
+        app: bankmore
+        component: transferencias
+    spec:
+      containers:
+      - name: transferencias-api
+        image: bankmore/transferencias-api:latest
+        ports:
+        - containerPort: 5010
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ASPNETCORE_URLS
+          value: "http://+:5010"
+        - name: ConnectionStrings__DefaultConnection
+          valueFrom:
+            configMapKeyRef:
+              name: bankmore-config
+              key: TRANSFERENCIAS__CONNECTION_STRING
+        - name: ContaCorrenteApi__BaseUrl
+          valueFrom:
+            configMapKeyRef:
+              name: bankmore-config
+              key: TRANSFERENCIAS__CONTA_CORRENTE_API__BASE_URL
+        - name: Kafka__BootstrapServers
+          valueFrom:
+            configMapKeyRef:
+              name: bankmore-config
+              key: TRANSFERENCIAS__KAFKA__BOOTSTRAP_SERVERS
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5010
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5010
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/data
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: bankmore-data-pvc
+      restartPolicy: Always

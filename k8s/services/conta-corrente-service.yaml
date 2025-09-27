@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: conta-corrente-service
+  namespace: bankmore
+  labels:
+    app: bankmore
+    component: conta-corrente
+spec:
+  selector:
+    app: bankmore
+    component: conta-corrente
+  ports:
+  - name: http
+    port: 5009
+    targetPort: 5009
+    protocol: TCP
+  type: ClusterIP

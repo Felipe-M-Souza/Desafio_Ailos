@@ -56,6 +56,13 @@ O projeto segue uma arquitetura em camadas bem definida:
 - .NET 8 SDK
 - Docker e Docker Compose
 
+### 📋 Gerador de CPF para Testes
+
+Para gerar CPFs válidos para testes, utilize:
+- **Site:** [https://www.4devs.com.br/gerador_de_cpf](https://www.4devs.com.br/gerador_de_cpf)
+- **Opções:** Gerar com ou sem pontuação
+- **Uso:** Testes de criação de contas e validações
+
 ### Execução Local
 
 1. **Clone o repositório**
@@ -79,8 +86,8 @@ dotnet test
 dotnet run --project src/ContaCorrente.Api
 ```
 
-A API estará disponível em: `https://localhost:7000`
-Swagger UI: `https://localhost:7000/swagger`
+A API estará disponível em: `http://localhost:5009`
+Swagger UI: `http://localhost:5009/swagger`
 
 ### Execução com Docker
 
@@ -90,10 +97,12 @@ docker-compose up -d --build
 ```
 
 2. **Acesse os serviços**
-- API: `http://localhost:8080`
-- Swagger: `http://localhost:8080/swagger`
-- Kafka UI: `http://localhost:8085`
-- Redis: `localhost:6379`
+- **Aplicação:** `http://localhost:5009/`
+- **Swagger:** `http://localhost:5009/swagger`
+- **Prometheus:** `http://localhost:9090/targets`
+- **Grafana:** `http://localhost:3000/`
+- **Kafka UI:** `http://localhost:8081`
+- **Redis:** `localhost:6379`
 
 ## 📚 Documentação da API
 
@@ -185,8 +194,24 @@ dotnet test
 
 ## 📊 Monitoramento
 
+### Prometheus
+Acesse `http://localhost:9090/targets` para monitorar:
+- Status dos serviços
+- Métricas de performance
+- Health checks
+
+### Grafana
+Acesse `http://localhost:3000/` para visualizar:
+- **Dashboard principal:** `http://localhost:3000/public-dashboards/387137f2231e4aeaa1506430f336cdc0`
+- **Dashboard personalizado:** Disponível em `monitoring/grafana/dashboards/BankMore Monitoring-Felipe.json`
+- Métricas em tempo real
+- Gráficos de performance
+- Alertas configurados
+
+**Login:** `admin` / `admin123`
+
 ### Kafka UI
-Acesse `http://localhost:8085` para monitorar:
+Acesse `http://localhost:8081` para monitorar:
 - Tópicos Kafka
 - Mensagens em tempo real
 - Consumidores e produtores
@@ -234,10 +259,13 @@ tests/
 └── ContaCorrente.IntegrationTests/ # Testes de integração
 ```
 
-## 🚀 Próximos Passos
+## 🚀 Próximos Passos (Opcionais)
 
-- [ ] Implementar health checks
-- [ ] Adicionar métricas com OpenTelemetry
+- [x] ~~Implementar health checks~~ ✅ **CONCLUÍDO**
+- [x] ~~Adicionar métricas com Prometheus~~ ✅ **CONCLUÍDO**
+- [x] ~~Implementar dashboards com Grafana~~ ✅ **CONCLUÍDO**
+- [x] ~~Implementar testes automatizados~~ ✅ **CONCLUÍDO**
+- [x] ~~Documentação Swagger completa~~ ✅ **CONCLUÍDO**
 - [ ] Implementar retry policy para Kafka
 - [ ] Adicionar validação com FluentValidation
 - [ ] Implementar rate limiting

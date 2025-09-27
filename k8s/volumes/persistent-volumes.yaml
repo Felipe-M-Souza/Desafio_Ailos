@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: bankmore-data-pv
+  namespace: bankmore
+  labels:
+    app: bankmore
+    component: storage
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: bankmore-storage
+  hostPath:
+    path: /var/lib/bankmore/data
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: bankmore-logs-pv
+  namespace: bankmore
+  labels:
+    app: bankmore
+    component: storage
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: bankmore-storage
+  hostPath:
+    path: /var/lib/bankmore/logs
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bankmore-data-pvc
+  namespace: bankmore
+  labels:
+    app: bankmore
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: bankmore-storage
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: bankmore-logs-pvc
+  namespace: bankmore
+  labels:
+    app: bankmore
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: bankmore-storage

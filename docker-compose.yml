@@ -1,82 +1,185 @@
-
-networks:
-  conta-corrente-network:
-    driver: bridge
+version: '3.8'
 
 services:
-  # Zookeeper para Kafka
+  # Kafka e Zookeeper
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
+    hostname: zookeeper
     container_name: zookeeper
+    ports:
+      - "2181:2181"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-    networks:
-      - conta-corrente-network
 
-  # Kafka
   kafka:
     image: confluentinc/cp-kafka:7.4.0
+    hostname: kafka
     container_name: kafka
     depends_on:
       - zookeeper
     ports:
       - "9092:9092"
+      - "9101:9101"
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
-    networks:
-      - conta-corrente-network
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
 
-  # Kafka UI para monitoramento
+  # Kafka UI
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
     depends_on:
       - kafka
     ports:
-      - "8081:8080"
+      - "8080:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
-    networks:
-      - conta-corrente-network
 
-  # API Principal
-  api:
-    build:
-      context: .
-      dockerfile: src/ContaCorrente.Api/Dockerfile
-    container_name: api
-    ports:
-      - "5009:8080"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__Sqlite=Data Source=/app/app.db
-      - Jwt__Key=mude-esta-chave-super-secreta-para-producao
-      - Jwt__Issuer=ContaCorrente
-      - Jwt__Audience=ContaCorrente
-      - Kafka__BootstrapServers=localhost:9092
-    volumes:
-      - ./data:/app/data
-    depends_on:
-      - kafka
-      - redis
-    networks:
-      - conta-corrente-network
-
-
-  # Redis
+  # Redis Cache
   redis:
     image: redis:7-alpine
     container_name: redis
     ports:
       - "6379:6379"
-    networks:
-      - conta-corrente-network
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+  # Seq Logging
+  seq:
+    image: datalust/seq:latest
+    container_name: seq
+    ports:
+      - "5341:80"
+    environment:
+      - ACCEPT_EULA=Y
+
+  # Conta Corrente API
+  conta-corrente-api:
+    build:
+      context: .
+      dockerfile: src/ContaCorrente.Api/Dockerfile
+    container_name: conta-corrente-api
+    ports:
+      - "5009:5009"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5009
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/contacorrente.db
+      - ConnectionStrings__Redis=redis:6379
+      - Kafka__BootstrapServers=kafka:29092
+      - Redis__ConnectionString=redis:6379
+      - Redis__InstanceName=BankMore
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      - kafka
+      - redis
+      - seq
+
+  # Transferencias API
+  transferencias-api:
+    build:
+      context: .
+      dockerfile: src/Transferencias.Api/Dockerfile
+    container_name: transferencias-api
+    ports:
+      - "5010:5010"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5010
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/transferencias.db
+      - ContaCorrenteApi__BaseUrl=http://conta-corrente-api:5009
+      - Kafka__BootstrapServers=kafka:29092
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - conta-corrente-api
+      - kafka
+
+  # Tarifas API
+  tarifas-api:
+    build:
+      context: .
+      dockerfile: src/Tarifas.Api/Dockerfile
+    container_name: tarifas-api
+    ports:
+      - "5011:5011"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5011
+      - ConnectionStrings__DefaultConnection=Data Source=/app/data/tarifas.db
+      - Kafka__BootstrapServers=kafka:29092
+      - Tarifas__ValorTransferencia=2.50
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - kafka
+
+  # Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:5009
+    depends_on:
+      - conta-corrente-api
+
+  # Prometheus - Coleta métricas
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus-complete.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    depends_on:
+      - conta-corrente-api
+
+  # Grafana - Dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+
+volumes:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  default:
+    name: bankmore-network

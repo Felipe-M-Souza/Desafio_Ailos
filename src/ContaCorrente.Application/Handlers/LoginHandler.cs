@@ -64,9 +64,9 @@ namespace ContaCorrente.Application.Handlers
 
         private string GerarToken(Domain.Entities.Conta conta)
         {
-            var jwtKey = _configuration["Jwt:Key"] ?? "super_secret_key_here_change";
-            var jwtIssuer = _configuration["Jwt:Issuer"] ?? "ContaCorrente";
-            var jwtAudience = _configuration["Jwt:Audience"] ?? "ContaCorrente";
+            var jwtKey = _configuration["Jwt:SecretKey"] ?? "MinhaChaveSecretaSuperSeguraParaJWT12345678901234567890";
+            var jwtIssuer = _configuration["Jwt:Issuer"] ?? "BankMore";
+            var jwtAudience = _configuration["Jwt:Audience"] ?? "BankMoreUsers";
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

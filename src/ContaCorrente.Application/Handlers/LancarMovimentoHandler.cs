@@ -182,7 +182,8 @@ namespace ContaCorrente.Application.Handlers
                 throw new ArgumentException("Data deve estar no formato DD/MM/YYYY");
             }
 
-            return parsedDate;
+            // Garantir que a data seja tratada como local (sem conversão de timezone)
+            return DateTime.SpecifyKind(parsedDate, DateTimeKind.Local);
         }
     }
 }
