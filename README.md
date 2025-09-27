@@ -259,18 +259,6 @@ tests/
 └── ContaCorrente.IntegrationTests/ # Testes de integração
 ```
 
-## 🚀 Próximos Passos (Opcionais)
-
-- [x] ~~Implementar health checks~~ ✅ **CONCLUÍDO**
-- [x] ~~Adicionar métricas com Prometheus~~ ✅ **CONCLUÍDO**
-- [x] ~~Implementar dashboards com Grafana~~ ✅ **CONCLUÍDO**
-- [x] ~~Implementar testes automatizados~~ ✅ **CONCLUÍDO**
-- [x] ~~Documentação Swagger completa~~ ✅ **CONCLUÍDO**
-- [ ] Implementar retry policy para Kafka
-- [ ] Adicionar validação com FluentValidation
-- [ ] Implementar rate limiting
-- [ ] Adicionar suporte a Oracle
-
 ## 📝 Licença
 
 Este projeto foi desenvolvido como parte do desafio técnico da Ailos.
