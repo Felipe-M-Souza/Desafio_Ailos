@@ -1,8 +1,9 @@
-using ContaCorrente.Domain.Events;
-using ContaCorrente.Domain.Entities;
-using ContaCorrente.Domain.Interfaces;
 using System;
 using System.Threading.Tasks;
+using ContaCorrente.Domain.Entities;
+using ContaCorrente.Domain.Events;
+using ContaCorrente.Domain.Interfaces;
+using ContaCorrente.Infrastructure.Services;
 
 namespace ContaCorrente.Application.Services
 {
@@ -11,22 +12,34 @@ namespace ContaCorrente.Application.Services
         private readonly ITarifaRepository _tarifaRepository;
         private readonly ITarifaCobradaRepository _tarifaCobradaRepository;
         private readonly IMovimentoRepository _movimentoRepository;
+        private readonly IEventPublisher _eventPublisher;
 
         public TarifaService(
             ITarifaRepository tarifaRepository,
             ITarifaCobradaRepository tarifaCobradaRepository,
-            IMovimentoRepository movimentoRepository)
+            IMovimentoRepository movimentoRepository,
+            IEventPublisher eventPublisher
+        )
         {
             _tarifaRepository = tarifaRepository;
             _tarifaCobradaRepository = tarifaCobradaRepository;
             _movimentoRepository = movimentoRepository;
+            _eventPublisher = eventPublisher;
         }
 
-        public async Task<bool> CobrarTarifaAsync(string idContaCorrente, string tipoOperacao, string? idOperacaoRelacionada = null)
+        public async Task<bool> CobrarTarifaAsync(
+            string idContaCorrente,
+            string tipoOperacao,
+            string? idOperacaoRelacionada = null
+        )
         {
             // Verificar se já foi cobrada tarifa para esta operação
-            if (!string.IsNullOrEmpty(idOperacaoRelacionada) && 
-                await _tarifaCobradaRepository.ExisteTarifaCobradaParaOperacaoAsync(idOperacaoRelacionada))
+            if (
+                !string.IsNullOrEmpty(idOperacaoRelacionada)
+                && await _tarifaCobradaRepository.ExisteTarifaCobradaParaOperacaoAsync(
+                    idOperacaoRelacionada
+                )
+            )
             {
                 return false; // Tarifa já foi cobrada
             }
@@ -75,13 +88,14 @@ namespace ContaCorrente.Application.Services
                 IdConta = idContaCorrente,
                 NumeroConta = 0, // Será preenchido se necessário
                 IdTarifa = tarifa.IdTarifa,
-                NomeTarifa = tarifa.Descricao,
-                ValorTarifa = tarifa.Valor,
+                Valor = tarifa.Valor,
                 DataCobranca = DateTime.UtcNow,
                 TipoOperacao = tipoOperacao,
-                Descricao = $"Tarifa cobrada: {tarifa.Descricao}"
+                Descricao = $"Tarifa cobrada: {tarifa.Descricao}",
             };
 
+            // Publicar evento no Kafka
+            await _eventPublisher.PublishTarifaCobradaAsync(evento);
 
             return true;
         }
@@ -93,4 +107,3 @@ namespace ContaCorrente.Application.Services
         }
     }
 }
-

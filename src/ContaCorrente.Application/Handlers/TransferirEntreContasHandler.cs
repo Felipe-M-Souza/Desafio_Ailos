@@ -4,6 +4,7 @@ using ContaCorrente.Application.DTOs;
 using ContaCorrente.Domain.Events;
 using ContaCorrente.Domain.Interfaces;
 using ContaCorrente.Domain.Entities;
+using ContaCorrente.Infrastructure.Services;
 using MediatR;
 using System;
 using System.Globalization;
@@ -17,15 +18,18 @@ namespace ContaCorrente.Application.Handlers
         private readonly IContaCorrenteRepository _contaRepository;
         private readonly IMovimentoRepository _movimentoRepository;
         private readonly ContaCorrente.Domain.Interfaces.ITarifaService _tarifaService;
+        private readonly IEventPublisher _eventPublisher;
 
         public TransferirEntreContasHandler(
             IContaCorrenteRepository contaRepository,
             IMovimentoRepository movimentoRepository,
-            ContaCorrente.Domain.Interfaces.ITarifaService tarifaService)
+            ContaCorrente.Domain.Interfaces.ITarifaService tarifaService,
+            IEventPublisher eventPublisher)
         {
             _contaRepository = contaRepository;
             _movimentoRepository = movimentoRepository;
             _tarifaService = tarifaService;
+            _eventPublisher = eventPublisher;
         }
 
         public async Task<TransferirEntreContasResponse> Handle(TransferirEntreContasCommand request, CancellationToken cancellationToken)
@@ -130,6 +134,8 @@ namespace ContaCorrente.Application.Handlers
                 SaldoContaDestino = await _movimentoRepository.ObterSaldoAsync(contaDestino.IdContaCorrente)
             };
 
+            // Publicar evento no Kafka
+            await _eventPublisher.PublishTransferenciaRealizadaAsync(evento);
 
             return new TransferirEntreContasResponse(
                 movimentoOrigemCriado.IdMovimento, 

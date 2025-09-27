@@ -3,7 +3,9 @@ using ContaCorrente.Application.Handlers;
 using ContaCorrente.Application.Services;
 using ContaCorrente.Domain.Interfaces;
 using ContaCorrente.Infrastructure.Data;
+using ContaCorrente.Infrastructure.Messaging;
 using ContaCorrente.Infrastructure.Repositories;
+using ContaCorrente.Infrastructure.Services;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -105,6 +107,13 @@ builder.Services.AddScoped<ITarifaCobradaRepository, TarifaCobradaRepository>();
 
 // Serviços
 builder.Services.AddScoped<ContaCorrente.Domain.Interfaces.ITarifaService, TarifaService>();
+
+// Kafka
+builder.Services.AddSingleton<IMessageProducer, KafkaMessageProducer>();
+builder.Services.AddScoped<IEventPublisher, KafkaEventPublisher>();
+
+// Log para debug
+Console.WriteLine("Kafka services registrados!");
 
 // Cache
 builder.Services.AddMemoryCache();

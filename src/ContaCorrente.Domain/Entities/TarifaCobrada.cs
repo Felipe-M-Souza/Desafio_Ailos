@@ -19,12 +19,14 @@ namespace ContaCorrente.Domain.Entities
         }
 
         public TarifaCobrada(
-            string idContaCorrente, 
-            string idTarifa, 
-            string tipoOperacao, 
-            decimal valorTarifa, 
+            string idContaCorrente,
+            string idTarifa,
+            string tipoOperacao,
+            decimal valorTarifa,
             string descricao,
-            string? idOperacaoRelacionada = null) : this()
+            string? idOperacaoRelacionada = null
+        )
+            : this()
         {
             IdContaCorrente = idContaCorrente;
             IdTarifa = idTarifa;
@@ -35,5 +37,3 @@ namespace ContaCorrente.Domain.Entities
         }
     }
 }
-
-

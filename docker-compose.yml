@@ -1,75 +1,78 @@
-version: "3.9"
+
+networks:
+  conta-corrente-network:
+    driver: bridge
 
 services:
-  api:
-    build: 
-      context: .
-      dockerfile: src/ContaCorrente.Api/Dockerfile
-    container_name: conta-corrente-api
+  # Zookeeper para Kafka
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: zookeeper
     environment:
-      - ASPNETCORE_ENVIRONMENT=Docker
-      - ConnectionStrings__Sqlite=Data Source=/data/app.db
-      - Kafka__BootstrapServers=kafka:9092
-      - Redis__Enabled=false
-      - Jwt__Issuer=ContaCorrente
-      - Jwt__Audience=ContaCorrente
-      - Jwt__Key=super_secret_key_here_change
-    ports:
-      - "8080:8080"
-    depends_on:
-      - kafka
-    volumes:
-      - ./data:/data
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
     networks:
       - conta-corrente-network
 
-  transferencias-api:
-    build: 
-      context: .
-      dockerfile: src/ContaCorrente.Transferencias.Api/Dockerfile
-    container_name: transferencias-api
+  # Kafka
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Docker
-      - ConnectionStrings__Sqlite=Data Source=/data/transferencias.db
-      - Kafka__BootstrapServers=kafka:9092
-      - Kafka__TopicTransferencias=transferencias.efetuadas
-      - Redis__Enabled=false
-      - Jwt__Issuer=ContaCorrente
-      - Jwt__Audience=ContaCorrente
-      - Jwt__Key=super_secret_key_here_change
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    networks:
+      - conta-corrente-network
+
+  # Kafka UI para monitoramento
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka
     ports:
       - "8081:8080"
-    depends_on:
-      - kafka
-    volumes:
-      - ./data:/data
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
     networks:
       - conta-corrente-network
 
-  tarifas-api:
-    build: 
+  # API Principal
+  api:
+    build:
       context: .
-      dockerfile: src/ContaCorrente.Tarifas.Api/Dockerfile
-    container_name: tarifas-api
+      dockerfile: src/ContaCorrente.Api/Dockerfile
+    container_name: api
+    ports:
+      - "5009:8080"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Docker
-      - ConnectionStrings__Sqlite=Data Source=/data/tarifas.db
-      - Kafka__BootstrapServers=kafka:9092
-      - Kafka__TopicTarifas=tarifas.cobradas
-      - Redis__Enabled=false
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__Sqlite=Data Source=/app/app.db
+      - Jwt__Key=mude-esta-chave-super-secreta-para-producao
       - Jwt__Issuer=ContaCorrente
       - Jwt__Audience=ContaCorrente
-      - Jwt__Key=super_secret_key_here_change
-    ports:
-      - "8082:8080"
+      - Kafka__BootstrapServers=localhost:9092
+    volumes:
+      - ./data:/app/data
     depends_on:
       - kafka
-    volumes:
-      - ./data:/data
+      - redis
     networks:
       - conta-corrente-network
 
 
+  # Redis
   redis:
     image: redis:7-alpine
     container_name: redis
@@ -77,11 +80,3 @@ services:
       - "6379:6379"
     networks:
       - conta-corrente-network
-
-networks:
-  conta-corrente-network:
-    driver: bridge
-
-volumes:
-  data:
-
